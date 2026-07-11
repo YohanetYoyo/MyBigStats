@@ -1,0 +1,309 @@
+import { notif } from "../utils/notif.js";
+
+interface Sport {
+    id: number;
+    name: string;
+    slug: string;
+    type: string;
+    players_per_team: number;
+    match_duration_minutes: number;
+    governing_body: string;
+    competition: {
+        name: string;
+        host_country: string;
+        venue: string;
+        date: string;
+        format: string;
+    }
+}
+
+interface Athlete {
+    id: number;
+    sport_id: number
+    team_id?: number;
+    first_name: string;
+    last_name: string;
+    nickname?: string;
+    nationality: string;
+    birth_date: string;
+    height_cm: number;
+    weight_kg: number;
+    reach_cm: number;
+    weight_class: string;
+    stance: string;
+    stats: {
+        wins: number;
+        losses: number;
+        draws: number;
+        no_contests: number;
+        wins_by_ko: number;
+        wins_by_submission: number;
+        wins_by_decision: number;
+        title_defenses: number;
+    }
+}
+
+interface Rencontre {
+    id: number;
+    sport_id: number;
+    type: string;
+    card_position: string;
+    date: string;
+    fighter1_id: number;
+    fighter2_id: number;
+    winner_id: number;
+    method: string;
+    round: number;
+    time: string;
+    weight_class: string
+    venue: string;
+    title_fight: boolean;
+    status: string;
+}
+
+type AthleteFilter = Partial<Pick<Athlete, "weight_class">>;
+
+let athletes: Athlete[] = [];
+let rencontres: Rencontre[] = [];
+
+async function getMmaData(): Promise<void> {
+    try {
+        const sportsResponse = await fetch('https://keligmartin.github.io/api/sports.json');
+        if (!sportsResponse.ok) {
+            throw new Error('Impossible de récupérer les sports. Réessayez plus tard.');
+        }
+
+        const sports: Sport[] = await sportsResponse.json();
+        const mma = sports.find((a) => a.slug === 'mma');
+
+        if (!mma) {
+            notif("Le sport MMA n'existe pas dans l'API.", "error");
+            return;
+        }
+
+        const athletesResponse = await fetch('https://keligmartin.github.io/api/athletes.json');
+
+        if (!athletesResponse.ok) {
+            throw new Error('Impossible de récupérer les athlètes !');
+        }
+
+        const allAthletes: Athlete[] = await athletesResponse.json();
+        athletes = allAthletes.filter((athlete) => athlete.sport_id === mma.id);
+
+        const rencontresResponse = await fetch('https://keligmartin.github.io/api/rencontres.json');
+
+        if (!rencontresResponse.ok) {
+            throw new Error('Impossible de récupérer les rencontres !');
+        }
+
+        const allRencontres: Rencontre[] = await rencontresResponse.json();
+        rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === mma.id);
+
+        afficherStats();
+        afficherRencontres();
+        afficherAthletes(athletes);
+        weightClassFilter();
+        comparatorSelects();
+    } catch (error) {
+        console.error(error);
+        notif("L'API est indisponible pour le moment. Réessayez plus tard.", "error");
+    }
+}
+
+function afficherStats(): void {
+    const container = document.getElementById('stats-content');
+    if (!container) return;
+
+    let totalVictoires = 0;
+    for (const athlete of athletes) {
+        totalVictoires += athlete.stats.wins ?? 0;
+    }
+
+    container.innerHTML = `
+    <p>Combattants enregistrés : <strong>${athletes.length}</strong></p>
+    <p>Total de victoires cumulées : <strong>${totalVictoires}</strong></p>
+  `;
+}
+
+function afficherRencontres(): void {
+    const list = document.getElementById("rencontres-list");
+    if (!list) return;
+
+    if (rencontres.length === 0) {
+        list.innerHTML = "<li>Aucune rencontre disponible.</li>";
+        return;
+    }
+
+    let html = "";
+    for (const rencontre of rencontres) {
+        const date = new Date(rencontre.date).toLocaleDateString("fr-FR");
+
+        const fighter1 = athletes.find((a) => a.id === rencontre.fighter1_id);
+        const fighter2 = athletes.find((a) => a.id === rencontre.fighter2_id);
+
+        const name1 = fighter1 ? `${fighter1.first_name + (fighter1.nickname ? ` "${fighter1.nickname}" ` : " ") + fighter1.last_name}` : "Inconnu";
+        const name2 = fighter2 ? `${fighter2.first_name + (fighter2.nickname ? ` "${fighter2.nickname}" ` : " ") + fighter2.last_name}` : "Inconnu";
+
+        const winner = athletes.find((a) => a.id === rencontre.winner_id);
+        const winnerText = winner ? ` — Vainqueur : ${winner.first_name + (winner.nickname ? ` "${winner.nickname}" ` : " ") + winner.last_name} (${rencontre.method})` : "";
+
+        html += `
+            <li>
+                ${date} — ${name1} vs ${name2}
+                (${rencontre.status})${winnerText}
+            </li>
+        `;
+    }
+
+    list.innerHTML = html;
+}
+
+function afficherAthletes(athletes: Athlete[]): void {
+    const container = document.getElementById("athletes-list");
+    if (!container) return;
+
+    if (athletes.length === 0) {
+        container.innerHTML = "<p>Aucun combattant ne correspond.</p>";
+        return;
+    }
+
+    let html = "";
+    for (const athlete of athletes) {
+        html += `
+      <article class="athlete-card">
+        <h3>${athlete.first_name + (athlete.nickname ? ` "${athlete.nickname}" ` : " ") + athlete.last_name}</h3>
+        <p>${athlete.weight_class ?? "Catégorie inconnue"}</p>
+        <p>${athlete.stats.wins ?? 0}V - ${athlete.stats.losses ?? 0}D</p>
+      </article>
+    `;
+    }
+    container.innerHTML = html;
+}
+
+function weightClassFilter(): void {
+    const select = document.getElementById("weightclass-filter") as HTMLSelectElement | null;
+    if (!select) return;
+
+    const weightClasses: string[] = [];
+    for (const athlete of athletes) {
+        if (athlete.weight_class && !weightClasses.includes(athlete.weight_class)) {
+            weightClasses.push(athlete.weight_class);
+        }
+    }
+
+    for (const weightClass of weightClasses) {
+        const option = document.createElement("option");
+        option.value = weightClass;
+        option.textContent = weightClass;
+        select.appendChild(option);
+    }
+}
+
+function comparatorSelects(): void {
+    const select1 = document.getElementById("compare-athlete-1") as HTMLSelectElement | null;
+    const select2 = document.getElementById("compare-athlete-2") as HTMLSelectElement | null;
+    if (!select1 || !select2) return;
+
+    let optionsHtml = "";
+    for (const athlete of athletes) {
+        optionsHtml += `<option value="${athlete.id}">${athlete.first_name + (athlete.nickname ? ` "${athlete.nickname}" ` : " ") + athlete.last_name}</option>`;
+    }
+    select1.innerHTML = optionsHtml;
+    select2.innerHTML = optionsHtml;
+}
+
+function setupTabs(): void {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(".tab-btn");
+
+    buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const targetTab = button.dataset.tab;
+            if (!targetTab) return;
+
+            buttons.forEach((b) => b.classList.remove("active"));
+            button.classList.add("active");
+
+            document.querySelectorAll<HTMLElement>(".tab-panel").forEach((panel) => {
+                if (panel.dataset.tabPanel === targetTab) {
+                    panel.classList.remove("hidden");
+                } else {
+                    panel.classList.add("hidden");
+                }
+            });
+        });
+    });
+}
+
+function applyFilters(): void {
+    const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
+    const positionFilter = document.getElementById("position-filter") as HTMLSelectElement | null;
+
+    const query = (searchInput?.value ?? "").toLowerCase();
+
+    const filter: AthleteFilter = {
+        weight_class: positionFilter?.value || undefined,
+    };
+
+    const filtered = athletes.filter((athlete) => {
+        const matchesName = athlete.last_name.toLowerCase().includes(query);
+        const matchesPosition = !filter.weight_class || athlete.weight_class === filter.weight_class;
+        return matchesName && matchesPosition;
+    });
+
+    afficherAthletes(filtered);
+}
+
+function setupSearchAndFilter(): void {
+    document.getElementById("search-input")?.addEventListener("input", applyFilters);
+    document.getElementById("position-filter")?.addEventListener("change", applyFilters);
+}
+
+
+function setupComparator(): void {
+    const button = document.getElementById("compare-btn");
+
+    button?.addEventListener("click", () => {
+        const select1: HTMLSelectElement = document.getElementById("compare-athlete-1") as HTMLSelectElement;
+        const select2: HTMLSelectElement = document.getElementById("compare-athlete-2") as HTMLSelectElement;
+        const resultBox = document.getElementById("compare-result");
+        if (!resultBox) return;
+
+        const id1 = Number(select1.value);
+        const id2 = Number(select2.value);
+
+        const athlete1 = athletes.find((athlete) => athlete.id === id1);
+        const athlete2 = athletes.find((athlete) => athlete.id === id2);
+
+        if (!athlete1 || !athlete2) {
+            notif("Sélectionne deux combattants valides.", "error");
+            return;
+        }
+
+        if (id1 === id2) {
+            notif("Choisis deux combattants différents.", "error");
+            return;
+        }
+
+        if (athlete1.sport_id !== athlete2.sport_id) {
+            notif("Impossible de comparer des athlètes de sports différents.", "error");
+            return;
+        }
+
+        resultBox.innerHTML = `
+      <table class="compare-table">
+        <thead>
+          <tr><th>${athlete1.first_name + (athlete1.nickname ? ` "${athlete1.nickname}" ` : " ") + athlete1.last_name}</th><th>Stat</th><th>${athlete2.first_name + (athlete2.nickname ? ` "${athlete2.nickname}" ` : " ") + athlete2.last_name}</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>${athlete1.stats.wins ?? 0}</td><td>Victoires</td><td>${athlete2.stats.wins ?? 0}</td></tr>
+          <tr><td>${athlete1.stats.losses ?? 0}</td><td>Défaites</td><td>${athlete2.stats.losses ?? 0}</td></tr>
+        </tbody>
+      </table>
+    `;
+    });
+}
+
+setupTabs();
+setupSearchAndFilter();
+setupComparator();
+getMmaData();
