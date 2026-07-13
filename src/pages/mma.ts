@@ -1,4 +1,5 @@
 import { notif } from "../utils/notif.js";
+import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 
 interface Sport {
     id: number;
@@ -99,7 +100,7 @@ async function getMmaData(): Promise<void> {
         const allRencontres: Rencontre[] = await rencontresResponse.json();
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === mma.id);
 
-        afficherStats();
+        afficherStats(getMmaStats());
         afficherRencontres();
         afficherAthletes(athletes);
         weightClassFilter();
@@ -110,19 +111,65 @@ async function getMmaData(): Promise<void> {
     }
 }
 
-function afficherStats(): void {
-    const container = document.getElementById('stats-content');
-    if (!container) return;
-
-    let totalVictoires = 0;
-    for (const athlete of athletes) {
-        totalVictoires += athlete.stats.wins ?? 0;
-    }
-
-    container.innerHTML = `
-    <p>Combattants enregistrés : <strong>${athletes.length}</strong></p>
-    <p>Total de victoires cumulées : <strong>${totalVictoires}</strong></p>
-  `;
+function getMmaStats(): Category[] {
+    return [
+        {
+            title: "Victoires",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.wins
+            })),
+            unit: ""
+        },
+        {
+            title: "Défaites",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.losses
+            })),
+            unit: ""
+        },
+        {
+            title: "Egalités",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.draws
+            })),
+            unit: ""
+        },
+        {
+            title: "No contests",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.no_contests
+            })),
+            unit: ""
+        },
+        {
+            title: "Victoire par K.O.",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.wins_by_ko
+            })),
+            unit: ""
+        },
+        {
+            title: "Victoire par soumission",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.wins_by_submission
+            })),
+            unit: ""
+        },
+        {
+            title: "Défenses de titre",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+                value: athlete.stats.title_defenses
+            })),
+            unit: ""
+        }
+    ]
 }
 
 function afficherRencontres(): void {
@@ -141,11 +188,11 @@ function afficherRencontres(): void {
         const fighter1 = athletes.find((a) => a.id === rencontre.fighter1_id);
         const fighter2 = athletes.find((a) => a.id === rencontre.fighter2_id);
 
-        const name1 = fighter1 ? `${fighter1.first_name + (fighter1.nickname ? ` "${fighter1.nickname}" ` : " ") + fighter1.last_name}` : "Inconnu";
-        const name2 = fighter2 ? `${fighter2.first_name + (fighter2.nickname ? ` "${fighter2.nickname}" ` : " ") + fighter2.last_name}` : "Inconnu";
+        const name1 = fighter1 ? `${fighter1.first_name} ${fighter1.nickname ? `"${fighter1.nickname}" ` : ""} ${fighter1.last_name}` : "Inconnu";
+        const name2 = fighter2 ? `${fighter2.first_name} ${fighter2.nickname ? `"${fighter2.nickname}"` : ""} ${fighter2.last_name}` : "Inconnu";
 
         const winner = athletes.find((a) => a.id === rencontre.winner_id);
-        const winnerText = winner ? ` — Vainqueur : ${winner.first_name + (winner.nickname ? ` "${winner.nickname}" ` : " ") + winner.last_name} (${rencontre.method})` : "";
+        const winnerText = winner ? ` — Vainqueur : ${winner.first_name} ${winner.nickname ? `"${winner.nickname}"` : ""} ${winner.last_name} (${rencontre.method})` : "";
 
         html += `
             <li>
@@ -171,7 +218,7 @@ function afficherAthletes(athletes: Athlete[]): void {
     for (const athlete of athletes) {
         html += `
       <article class="athlete-card">
-        <h3>${athlete.first_name + (athlete.nickname ? ` "${athlete.nickname}" ` : " ") + athlete.last_name}</h3>
+        <h3>${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}</h3>
         <p>${athlete.weight_class ?? "Catégorie inconnue"}</p>
         <p>${athlete.stats.wins ?? 0}V - ${athlete.stats.losses ?? 0}D</p>
       </article>
@@ -206,7 +253,7 @@ function comparatorSelects(): void {
 
     let optionsHtml = "";
     for (const athlete of athletes) {
-        optionsHtml += `<option value="${athlete.id}">${athlete.first_name + (athlete.nickname ? ` "${athlete.nickname}" ` : " ") + athlete.last_name}</option>`;
+        optionsHtml += `<option value="${athlete.id}">${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}</option>`;
     }
     select1.innerHTML = optionsHtml;
     select2.innerHTML = optionsHtml;
@@ -236,12 +283,12 @@ function setupTabs(): void {
 
 function applyFilters(): void {
     const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
-    const positionFilter = document.getElementById("position-filter") as HTMLSelectElement | null;
+    const weightClassFilter = document.getElementById("weightclass-filter") as HTMLSelectElement | null;
 
     const query = (searchInput?.value ?? "").toLowerCase();
 
     const filter: AthleteFilter = {
-        weight_class: positionFilter?.value || undefined,
+        weight_class: weightClassFilter?.value || undefined,
     };
 
     const filtered = athletes.filter((athlete) => {
@@ -255,7 +302,7 @@ function applyFilters(): void {
 
 function setupSearchAndFilter(): void {
     document.getElementById("search-input")?.addEventListener("input", applyFilters);
-    document.getElementById("position-filter")?.addEventListener("change", applyFilters);
+    document.getElementById("weightclass-filter")?.addEventListener("change", applyFilters);
 }
 
 
@@ -292,7 +339,7 @@ function setupComparator(): void {
         resultBox.innerHTML = `
       <table class="compare-table">
         <thead>
-          <tr><th>${athlete1.first_name + (athlete1.nickname ? ` "${athlete1.nickname}" ` : " ") + athlete1.last_name}</th><th>Stat</th><th>${athlete2.first_name + (athlete2.nickname ? ` "${athlete2.nickname}" ` : " ") + athlete2.last_name}</th></tr>
+          <tr><th>${athlete1.first_name} ${athlete1.nickname ? `"${athlete1.nickname}"` : ""} ${athlete1.last_name}</th><th>Stat</th><th>${athlete2.first_name + (athlete2.nickname ? ` "${athlete2.nickname}" ` : " ") + athlete2.last_name}</th></tr>
         </thead>
         <tbody>
           <tr><td>${athlete1.stats.wins ?? 0}</td><td>Victoires</td><td>${athlete2.stats.wins ?? 0}</td></tr>

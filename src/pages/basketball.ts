@@ -1,4 +1,5 @@
 import { notif } from "../utils/notif.js";
+import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 
 interface Sport {
     id: number;
@@ -127,7 +128,7 @@ async function getBasketballData(): Promise<void> {
         const allRencontres: Rencontre[] = await rencontresResponse.json();
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === basketball.id);
 
-        afficherStats();
+        afficherStats(getBasketballStats());
         afficherRencontres();
         afficherAthletes(athletes);
         positionFilter();
@@ -138,20 +139,73 @@ async function getBasketballData(): Promise<void> {
     }
 }
 
-function afficherStats(): void {
-    const container = document.getElementById('stats-content');
-    if (!container) return;
-
-    let totalPoints = 0;
-    for (const athlete of athletes) {
-        totalPoints += athlete.stats.points_per_game;
-    }
-
-    container.innerHTML = `
-    <p>Joueurs enregistrés : <strong>${athletes.length}</strong></p>
-    <p>Equipes enregistrés : <strong>${equipes.length}</strong></p>
-    <p>Total de points accumulés : <strong>${totalPoints}</strong></p>
-  `;
+function getBasketballStats(): Category[] {
+    return [
+        {
+            title: "Points par match",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: athlete.stats.points_per_game
+            })),
+            unit: ""
+        },
+        {
+            title: "Passes décisives par match",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: athlete.stats.assists_per_game,
+            })),
+            unit: ""
+        },
+        {
+            title: "Rebonds par match",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: athlete.stats.rebounds_per_game,
+            })),
+            unit: ""
+        },
+        {
+            title: "Contres par match",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: athlete.stats.blocks_per_game,
+            })),
+            unit: ""
+        },
+        {
+            title: "Pourcentage de paniers",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: Math.round(athlete.stats.field_goal_percentage * 1000) / 10,
+            })),
+            unit: " %"
+        },
+        {
+            title: "Pourcentage de paniers à trois points",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: Math.round(athlete.stats.three_point_percentage * 1000) / 10,
+            })),
+            unit: " %"
+        },
+        {
+            title: "Pourcentage des lancers-francs",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: Math.round(athlete.stats.free_throw_percentage * 1000) / 10,
+            })),
+            unit: " %"
+        },
+        {
+            title: "Minutes par jeu",
+            values: athletes.map((athlete) => ({
+                name: `${athlete.first_name} ${athlete.last_name}`,
+                value: athlete.stats.minutes_per_game,
+            })),
+            unit: " %"
+        }
+    ];
 }
 
 function getEquipeName(teamId: number): string {
