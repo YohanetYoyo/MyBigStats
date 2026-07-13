@@ -1,5 +1,6 @@
 import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
+import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 
 interface Sport {
     id: number;
@@ -101,7 +102,7 @@ async function getMmaData(): Promise<void> {
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === mma.id);
 
         afficherStats(getMmaStats());
-        afficherRencontres();
+        afficherRencontres(getMmaHistorique());
         afficherAthletes(athletes);
         weightClassFilter();
         comparatorSelects();
@@ -172,37 +173,23 @@ function getMmaStats(): Category[] {
     ]
 }
 
-function afficherRencontres(): void {
-    const list = document.getElementById("rencontres-list");
-    if (!list) return;
+function getMmaHistorique(): Historique[] {
+    return rencontres.map((rencontre) => {
+        const fighter1 = athletes.find((athlete) => athlete.id === rencontre.fighter1_id);
+        const fighter2 = athletes.find((athlete) => athlete.id === rencontre.fighter2_id);
+        const winner = athletes.find((athlete) => athlete.id === rencontre.winner_id);
 
-    if (rencontres.length === 0) {
-        list.innerHTML = "<li>Aucune rencontre disponible.</li>";
-        return;
-    }
+        const name1 = fighter1 ? `${fighter1.first_name} ${fighter1.nickname ? `"${fighter1.nickname}"`: ""} ${fighter1.last_name}` : "Inconnu";
+        const name2 = fighter2 ? `${fighter2.first_name} ${fighter2.nickname ? `"${fighter2.nickname}"`: ""} ${fighter2.last_name}` : "Inconnu";
 
-    let html = "";
-    for (const rencontre of rencontres) {
-        const date = new Date(rencontre.date).toLocaleDateString("fr-FR");
-
-        const fighter1 = athletes.find((a) => a.id === rencontre.fighter1_id);
-        const fighter2 = athletes.find((a) => a.id === rencontre.fighter2_id);
-
-        const name1 = fighter1 ? `${fighter1.first_name} ${fighter1.nickname ? `"${fighter1.nickname}" ` : ""} ${fighter1.last_name}` : "Inconnu";
-        const name2 = fighter2 ? `${fighter2.first_name} ${fighter2.nickname ? `"${fighter2.nickname}"` : ""} ${fighter2.last_name}` : "Inconnu";
-
-        const winner = athletes.find((a) => a.id === rencontre.winner_id);
-        const winnerText = winner ? ` — Vainqueur : ${winner.first_name} ${winner.nickname ? `"${winner.nickname}"` : ""} ${winner.last_name} (${rencontre.method})` : "";
-
-        html += `
-            <li>
-                ${date} — ${name1} vs ${name2}
-                (${rencontre.status})${winnerText}
-            </li>
-        `;
-    }
-
-    list.innerHTML = html;
+        return {
+            date: rencontre.date,
+            description: `<strong>${rencontre.weight_class}</strong> - ${rencontre.card_position} (${rencontre.status})<br/><br/>
+            ${name1} vs ${name2}
+            ${winner ? `<br/><br/>Vainqueur : ${winner.first_name} ${winner.nickname ? `"${winner.nickname}"` : ""} ${winner.last_name}<br/>${rencontre.method} R ${rencontre.round} ${rencontre.time}` : ""}
+            `
+        }
+    });
 }
 
 function afficherAthletes(athletes: Athlete[]): void {

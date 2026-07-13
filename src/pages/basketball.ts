@@ -1,5 +1,6 @@
 import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
+import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 
 interface Sport {
     id: number;
@@ -129,7 +130,7 @@ async function getBasketballData(): Promise<void> {
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === basketball.id);
 
         afficherStats(getBasketballStats());
-        afficherRencontres();
+        afficherRencontres(getBasketBallHistorique());
         afficherAthletes(athletes);
         positionFilter();
         comparatorSelects();
@@ -203,7 +204,7 @@ function getBasketballStats(): Category[] {
                 name: `${athlete.first_name} ${athlete.last_name}`,
                 value: athlete.stats.minutes_per_game,
             })),
-            unit: " %"
+            unit: " min"
         }
     ];
 }
@@ -213,32 +214,17 @@ function getEquipeName(teamId: number): string {
     return equipe ? equipe.name : "Equipe inconnue";
 }
 
-function afficherRencontres(): void {
-    const list = document.getElementById("rencontres-list");
-    if (!list) return;
+function getBasketBallHistorique(): Historique[] {
+    return rencontres.map((rencontre) => {
+        const home = getEquipeName(rencontre.home_team_id);
+        const away = getEquipeName(rencontre.away_team_id);
 
-    if (rencontres.length === 0) {
-        list.innerHTML = "<li>Aucune rencontre disponible.</li>";
-        return;
-    }
-
-    let html = "";
-    for (const rencontre of rencontres) {
-        const date = new Date(rencontre.date).toLocaleDateString("fr-FR");
-
-        const homeName = getEquipeName(rencontre.home_team_id);
-        const awayName = getEquipeName(rencontre.away_team_id);
-
-        html += `
-            <li>
-                ${date} — ${homeName} (${rencontre.home_score}) vs ${awayName} (${rencontre.away_score})
-                (${rencontre.status})
-                ${rencontre.playoff_round ? ` - ${rencontre.playoff_round}` : ""}
-            </li>
-        `;
-    }
-
-    list.innerHTML = html;
+        return {
+            date: rencontre.date,
+            description: `${rencontre.playoff_round} : ${rencontre.type.charAt(0).toUpperCase()}${rencontre.type.slice(1)} ${rencontre.game_number} (${rencontre.status})<br/><br/>
+            ${home} (${rencontre.home_score}) vs ${away} (${rencontre.away_score})`
+        };
+    });
 }
 
 function afficherAthletes(athletes: Athlete[]): void {
