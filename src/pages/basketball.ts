@@ -1,6 +1,7 @@
 import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
+import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
 
 interface Sport {
     id: number;
@@ -130,8 +131,8 @@ async function getBasketballData(): Promise<void> {
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === basketball.id);
 
         afficherStats(getBasketballStats());
-        afficherRencontres(getBasketBallHistorique());
-        afficherAthletes(athletes);
+        afficherRencontres(getBasketballHistorique());
+        afficherJoueurs(getBasketballPlayers(athletes));
         positionFilter();
         comparatorSelects();
     } catch (error) {
@@ -214,7 +215,7 @@ function getEquipeName(teamId: number): string {
     return equipe ? equipe.name : "Equipe inconnue";
 }
 
-function getBasketBallHistorique(): Historique[] {
+function getBasketballHistorique(): Historique[] {
     return rencontres.map((rencontre) => {
         const home = getEquipeName(rencontre.home_team_id);
         const away = getEquipeName(rencontre.away_team_id);
@@ -227,27 +228,13 @@ function getBasketBallHistorique(): Historique[] {
     });
 }
 
-function afficherAthletes(athletes: Athlete[]): void {
-    const container = document.getElementById("athletes-list");
-    if (!container) return;
-
-    if (athletes.length === 0) {
-        container.innerHTML = "<p>Aucun joueur ne correspond.</p>";
-        return;
-    }
-
-    let html = "";
-    for (const athlete of athletes) {
-        html += `
-      <article class="athlete-card">
-        <h3>${athlete.first_name} ${athlete.last_name}</h3>
-        <p>${athlete.position} - #${athlete.jersey_number}</p>
-        <p>${getEquipeName(athlete.team_id)}</p>
-        <p>${athlete.stats.points_per_game} pts / ${athlete.stats.rebounds_per_game} rbds / ${athlete.stats.assists_per_game} pds</p>
-      </article>
-    `;
-    }
-    container.innerHTML = html;
+function getBasketballPlayers(athletes: Athlete[]): Player[] {
+    return athletes.map((athlete) => ({
+        name: `${athlete.first_name} ${athlete.last_name}`,
+        subtitle: `${athlete.height_cm}cm ${athlete.weight_kg}kg`,
+        description: `${athlete.position} - #${athlete.jersey_number} - ${getEquipeName(athlete.team_id)}`,
+        statLines: [`${athlete.stats.minutes_per_game} MIN<br/>${athlete.stats.points_per_game} PTS<br/>${athlete.stats.field_goal_percentage} %Tirs<br/>${athlete.stats.three_point_percentage} %3PT<br/>${athlete.stats.free_throw_percentage} %LF<br/>${athlete.stats.rebounds_per_game} REB`]
+    }));
 }
 
 function positionFilter(): void {
@@ -320,7 +307,7 @@ function applyFilters(): void {
         return matchesName && matchesPosition;
     });
 
-    afficherAthletes(filtered);
+    afficherJoueurs(getBasketballPlayers(filtered));
 }
 
 function setupSearchAndFilter(): void {

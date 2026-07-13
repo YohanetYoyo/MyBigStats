@@ -1,6 +1,7 @@
 import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
+import { afficherJoueurs as afficherCombattants, type Player } from "../features/tabs/players.tab.js";
 
 interface Sport {
     id: number;
@@ -103,7 +104,7 @@ async function getMmaData(): Promise<void> {
 
         afficherStats(getMmaStats());
         afficherRencontres(getMmaHistorique());
-        afficherAthletes(athletes);
+        afficherCombattants(getMmaFighters(athletes));
         weightClassFilter();
         comparatorSelects();
     } catch (error) {
@@ -192,26 +193,13 @@ function getMmaHistorique(): Historique[] {
     });
 }
 
-function afficherAthletes(athletes: Athlete[]): void {
-    const container = document.getElementById("athletes-list");
-    if (!container) return;
-
-    if (athletes.length === 0) {
-        container.innerHTML = "<p>Aucun combattant ne correspond.</p>";
-        return;
-    }
-
-    let html = "";
-    for (const athlete of athletes) {
-        html += `
-      <article class="athlete-card">
-        <h3>${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}</h3>
-        <p>${athlete.weight_class ?? "Catégorie inconnue"}</p>
-        <p>${athlete.stats.wins ?? 0}V - ${athlete.stats.losses ?? 0}D</p>
-      </article>
-    `;
-    }
-    container.innerHTML = html;
+function getMmaFighters(athletes: Athlete[]): Player[] {
+    return athletes.map((athlete) => ({
+        name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
+        subtitle: `${athlete.height_cm}cm ${athlete.weight_kg}kg`,
+        description: `${athlete.weight_class} | ${athlete.stance}`,
+        statLines: [`${athlete.stats.wins}V - ${athlete.stats.losses}L - ${athlete.stats.draws}D<br/>${athlete.stats.wins_by_ko} Victoires par K.O.<br/>${athlete.stats.wins_by_submission} Victoires par soumission<br/>${athlete.stats.wins_by_decision} Victoires par décision<br/>${athlete.stats.no_contests} Sans décision`]
+    }));
 }
 
 function weightClassFilter(): void {
@@ -284,7 +272,7 @@ function applyFilters(): void {
         return matchesName && matchesPosition;
     });
 
-    afficherAthletes(filtered);
+    afficherCombattants(getMmaFighters(filtered));
 }
 
 function setupSearchAndFilter(): void {
