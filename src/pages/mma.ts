@@ -2,6 +2,7 @@ import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 import { afficherJoueurs as afficherCombattants, type Player } from "../features/tabs/players.tab.js";
+import { optionsFiltre, correspond } from "../features/search.js";
 
 interface Sport {
     id: number;
@@ -203,22 +204,8 @@ function getMmaFighters(athletes: Athlete[]): Player[] {
 }
 
 function weightClassFilter(): void {
-    const select = document.getElementById("weightclass-filter") as HTMLSelectElement | null;
-    if (!select) return;
-
-    const weightClasses: string[] = [];
-    for (const athlete of athletes) {
-        if (athlete.weight_class && !weightClasses.includes(athlete.weight_class)) {
-            weightClasses.push(athlete.weight_class);
-        }
-    }
-
-    for (const weightClass of weightClasses) {
-        const option = document.createElement("option");
-        option.value = weightClass;
-        option.textContent = weightClass;
-        select.appendChild(option);
-    }
+    const weightClass = athletes.map((athlete) => athlete.weight_class);
+    optionsFiltre("weightclass-filter", weightClass);
 }
 
 function comparatorSelects(): void {
@@ -236,6 +223,7 @@ function comparatorSelects(): void {
 
 function setupTabs(): void {
     const buttons = document.querySelectorAll<HTMLButtonElement>(".tab-btn");
+    const toolbar = document.querySelector<HTMLButtonElement>(".toolbar");
 
     buttons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -252,6 +240,14 @@ function setupTabs(): void {
                     panel.classList.add("hidden");
                 }
             });
+
+            if (toolbar) {
+                if (toolbar.classList.contains("hidden")) {
+                    toolbar.classList.remove("hidden");
+                } else {
+                    toolbar.classList.add("hidden");
+                }
+            }
         });
     });
 }
@@ -260,14 +256,14 @@ function applyFilters(): void {
     const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
     const weightClassFilter = document.getElementById("weightclass-filter") as HTMLSelectElement | null;
 
-    const query = (searchInput?.value ?? "").toLowerCase();
+    const texte = searchInput?.value ?? "";
 
     const filter: AthleteFilter = {
         weight_class: weightClassFilter?.value || undefined,
     };
 
     const filtered = athletes.filter((athlete) => {
-        const matchesName = athlete.last_name.toLowerCase().includes(query);
+        const matchesName = correspond(texte, athlete.first_name, athlete.nickname, athlete.last_name);
         const matchesPosition = !filter.weight_class || athlete.weight_class === filter.weight_class;
         return matchesName && matchesPosition;
     });

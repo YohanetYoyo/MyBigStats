@@ -2,6 +2,7 @@ import { notif } from "../utils/notif.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
+import { optionsFiltre, correspond } from "../features/search.js";
 
 interface Sport {
     id: number;
@@ -83,7 +84,7 @@ interface Rencontre {
     };
 }
 
-type AthleteFilter = Partial<Pick<Athlete, "position">>;
+type AthleteFilter = Partial<Pick<Athlete, "position" | "team_id">>;
 
 let athletes: Athlete[] = [];
 let equipes: Equipe[] = [];
@@ -134,6 +135,7 @@ async function getBasketballData(): Promise<void> {
         afficherRencontres(getBasketballHistorique());
         afficherJoueurs(getBasketballPlayers(athletes));
         positionFilter();
+        teamFilter();
         comparatorSelects();
     } catch (error) {
         console.error(error);
@@ -238,20 +240,18 @@ function getBasketballPlayers(athletes: Athlete[]): Player[] {
 }
 
 function positionFilter(): void {
-    const select = document.getElementById("position-filter") as HTMLSelectElement | null;
+    const positions = athletes.map((athlete) => athlete.position);
+    optionsFiltre("position-filter", positions);
+}
+
+function teamFilter(): void {
+    const select = document.getElementById("team-filter");
     if (!select) return;
 
-    const positions: string[] = [];
-    for (const athlete of athletes) {
-        if (athlete.position && !positions.includes(athlete.position)) {
-            positions.push(athlete.position);
-        }
-    }
-
-    for (const weightClass of positions) {
+    for (const equipe of equipes) {
         const option = document.createElement("option");
-        option.value = weightClass;
-        option.textContent = weightClass;
+        option.value = String(equipe.id);
+        option.textContent = equipe.name;
         select.appendChild(option);
     }
 }
@@ -271,6 +271,7 @@ function comparatorSelects(): void {
 
 function setupTabs(): void {
     const buttons = document.querySelectorAll<HTMLButtonElement>(".tab-btn");
+    const toolbar = document.querySelector(".toolbar");
 
     buttons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -287,6 +288,14 @@ function setupTabs(): void {
                     panel.classList.add("hidden");
                 }
             });
+
+            if (toolbar) {
+                if (toolbar.classList.contains("hidden")) {
+                    toolbar.classList.remove("hidden");
+                } else {
+                    toolbar.classList.add("hidden");
+                }
+            }
         });
     });
 }
@@ -294,17 +303,20 @@ function setupTabs(): void {
 function applyFilters(): void {
     const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
     const positionFilter = document.getElementById("position-filter") as HTMLSelectElement | null;
+    const teamFilter = document.getElementById("team-filter") as HTMLSelectElement | null;
 
-    const query = (searchInput?.value ?? "").toLowerCase();
+    const texte = searchInput?.value ?? "";
 
     const filter: AthleteFilter = {
         position: positionFilter?.value || undefined,
+        team_id: teamFilter?.value ? Number(teamFilter.value) : undefined
     };
 
     const filtered = athletes.filter((athlete) => {
-        const matchesName = athlete.last_name.toLowerCase().includes(query);
+        const matchesName = correspond(texte, athlete.first_name, athlete.last_name);
         const matchesPosition = !filter.position || athlete.position === filter.position;
-        return matchesName && matchesPosition;
+        const matchesTeam = !filter.team_id || athlete.team_id === filter.team_id;
+        return matchesName && matchesPosition && matchesTeam;
     });
 
     afficherJoueurs(getBasketballPlayers(filtered));
@@ -313,6 +325,7 @@ function applyFilters(): void {
 function setupSearchAndFilter(): void {
     document.getElementById("search-input")?.addEventListener("input", applyFilters);
     document.getElementById("position-filter")?.addEventListener("change", applyFilters);
+    document.getElementById("team-filter")?.addEventListener("change", applyFilters);
 }
 
 
