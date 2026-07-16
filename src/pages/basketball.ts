@@ -246,8 +246,13 @@ function getBasketballHistorique(): Historique[] {
         return {
             date: rencontre.date,
             description: `${translate(rencontre.playoff_round ?? "", matchs)} : ${rencontre.type.charAt(0).toUpperCase()}${rencontre.type.slice(1)} ${rencontre.game_number} (${translate(rencontre.status, statuts)})<br/><br/>
-            ${home} (${rencontre.home_score}) vs ${away} (${rencontre.away_score})<br/><br/>
-            ${rencontre.venue}`
+            ${home} (${rencontre.home_score}) vs ${away} (${rencontre.away_score})
+            ${rencontre.quarter_scores ? `<br/><br/>
+            Quart-temps (1 - 2 - 3 - 4) :<br/><br/>
+            ${home} : ${Object.values(rencontre.quarter_scores.home).join(" - ")}<br/>
+            ${away} : ${Object.values(rencontre.quarter_scores.away).join(" - ")}` : ""       
+            }<br/><br/>
+            ${rencontre.venue} (${new Intl.NumberFormat('fr-FR').format(rencontre.attendance)} spectateurs)`
         };
     });
 }
