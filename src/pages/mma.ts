@@ -4,6 +4,33 @@ import { afficherRencontres, type Historique } from "../features/tabs/history.ta
 import { afficherJoueurs as afficherCombattants, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
 import { remplirComparator, comparator } from "../features/comparator.js";
+import { translate } from "../utils/translate.js";
+
+const poids: Record<string, string> = {
+    "Heavyweight": "Poids lourd",
+    "Lightweight": "Poids léger",
+    "Middleweight": "Poids moyen",
+    "Featherweight": "Poids plume",
+    "Welterweight": "Poids welter",
+    "Bantamweight": "Poids coq"
+};
+
+const gardes: Record<string, string> = {
+    "Orthodox": "Orthodoxe",
+    "Southpaw": "Fausse patte",
+    "Switch": "Changement de garde"
+};
+
+const combats: Record<string, string> = {
+    "Main Event": "Combat principal",
+    "Co-Main Event": "Combat co-principal",
+    "Main Card": "Carte principale",
+    "Preliminary Card": "Carte préliminaire"
+}
+
+const statuts: Record<string, string> = {
+    "finished": "terminé"
+};
 
 interface Sport {
     id: number;
@@ -75,7 +102,7 @@ async function getMmaData(): Promise<void> {
     try {
         const sportsResponse = await fetch('https://keligmartin.github.io/api/sports.json');
         if (!sportsResponse.ok) {
-            throw new Error('Impossible de récupérer les sports. Réessayez plus tard.');
+            notif('Impossible de récupérer les sports. Réessayez plus tard.');
         }
 
         const sports: Sport[] = await sportsResponse.json();
@@ -89,7 +116,7 @@ async function getMmaData(): Promise<void> {
         const athletesResponse = await fetch('https://keligmartin.github.io/api/athletes.json');
 
         if (!athletesResponse.ok) {
-            throw new Error('Impossible de récupérer les athlètes !');
+            notif('Impossible de récupérer les athlètes !');
         }
 
         const allAthletes: Athlete[] = await athletesResponse.json();
@@ -98,7 +125,7 @@ async function getMmaData(): Promise<void> {
         const rencontresResponse = await fetch('https://keligmartin.github.io/api/rencontres.json');
 
         if (!rencontresResponse.ok) {
-            throw new Error('Impossible de récupérer les rencontres !');
+            notif('Impossible de récupérer les rencontres !');
         }
 
         const allRencontres: Rencontre[] = await rencontresResponse.json();
@@ -134,7 +161,7 @@ function getMmaStats(): Category[] {
             unit: ""
         },
         {
-            title: "Egalités",
+            title: "Égalités",
             values: athletes.map((athlete) => ({
                 name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
                 value: athlete.stats.draws
@@ -142,7 +169,7 @@ function getMmaStats(): Category[] {
             unit: ""
         },
         {
-            title: "No contests",
+            title: "Sans décision",
             values: athletes.map((athlete) => ({
                 name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
                 value: athlete.stats.no_contests
@@ -187,10 +214,10 @@ function getMmaHistorique(): Historique[] {
 
         return {
             date: rencontre.date,
-            description: `<strong>${rencontre.weight_class}</strong> - ${rencontre.card_position} (${rencontre.status})<br/><br/>
+            description: `<strong>${translate(rencontre.weight_class, poids)}</strong> - ${translate(rencontre.card_position, combats)} (${translate(rencontre.status, statuts)})<br/><br/>
             ${name1} vs ${name2}
-            ${winner ? `<br/><br/>Vainqueur : ${winner.first_name} ${winner.nickname ? `"${winner.nickname}"` : ""} ${winner.last_name}<br/>${rencontre.method} R ${rencontre.round} ${rencontre.time}` : ""}
-            `
+            ${winner ? `<br/><br/>Vainqueur : ${winner.first_name} ${winner.nickname ? `"${winner.nickname}"` : ""} ${winner.last_name}<br/>${rencontre.method} R ${rencontre.round} ${rencontre.time}` : ""}<br/><br/>
+            ${rencontre.venue}`
         }
     });
 }
@@ -199,14 +226,14 @@ function getMmaFighters(athletes: Athlete[]): Player[] {
     return athletes.map((athlete) => ({
         name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`,
         subtitle: `${athlete.height_cm}cm ${athlete.weight_kg}kg`,
-        description: `${athlete.weight_class} | ${athlete.stance}`,
+        description: `${translate(athlete.weight_class, poids)} | ${translate(athlete.stance, gardes)}`,
         statLines: [`${athlete.stats.wins}V - ${athlete.stats.losses}L - ${athlete.stats.draws}D<br/>${athlete.stats.wins_by_ko} Victoires par K.O.<br/>${athlete.stats.wins_by_submission} Victoires par soumission<br/>${athlete.stats.wins_by_decision} Victoires par décision<br/>${athlete.stats.no_contests} Sans décision`]
     }));
 }
 
 function weightClassFilter(): void {
-    const weightClass = athletes.map((athlete) => athlete.weight_class);
-    optionsFiltre("weightclass-filter", weightClass);
+    const allWeightClasses = athletes.map((athlete) => athlete.weight_class);
+    optionsFiltre("weightclass-filter", allWeightClasses, (value) => translate(value, poids));
 }
 
 function comparatorSelects(): void {
@@ -334,7 +361,7 @@ function setupComparator(): void {
             </tr>
             <tr>
                 <td>${athlete1.stats.draws ?? 0}</td>
-                <td>Egalités</td>
+                <td>Égalités</td>
                 <td>${athlete2.stats.draws ?? 0}</td>
             </tr>
             <tr>

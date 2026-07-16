@@ -1,4 +1,4 @@
-export function optionsFiltre(selectId: string, values: string[]): void {
+export function optionsFiltre(selectId: string, values: string[], label?: (value: string) => string): void {
     const select = document.getElementById(selectId) as HTMLSelectElement | null;
     if (!select) return;
 
@@ -7,7 +7,7 @@ export function optionsFiltre(selectId: string, values: string[]): void {
     for (const value of uniqueValues) {
         const option = document.createElement("option");
         option.value = value;
-        option.textContent = value;
+        option.textContent = label ? label(value) : value;
         select.appendChild(option);
     }
 }

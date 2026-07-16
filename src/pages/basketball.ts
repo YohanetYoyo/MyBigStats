@@ -4,6 +4,26 @@ import { afficherRencontres, type Historique } from "../features/tabs/history.ta
 import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
 import { remplirComparator, comparator } from "../features/comparator.js";
+import { translate } from "../utils/translate.js";
+
+const positions: Record<string, string> = {
+    "Point Guard": "Meneur de jeu",
+    "Shooting Guard": "Arrière",
+    "Small Forward": "Ailier",
+    "Power Forward": "Ailier fort",
+    "Center": "Pivot"
+};
+
+const matchs: Record<string, string> = {
+    "NBA Finals": "Finales NBA",
+    "Conference Finals": "Finales de conférence",
+    "Conference Semifinals": "Demi-finales de conférence",
+    "First Round": "Premier tour"
+};
+
+const statuts: Record<string, string> = {
+    "finished": "terminé"
+};
 
 interface Sport {
     id: number;
@@ -95,7 +115,7 @@ async function getBasketballData(): Promise<void> {
     try {
         const sportsResponse = await fetch('https://keligmartin.github.io/api/sports.json');
         if (!sportsResponse.ok) {
-            throw new Error('Impossible de récupérer les sports. Réessayez plus tard.');
+            notif('Impossible de récupérer les sports. Réessayez plus tard.');
         }
 
         const sports: Sport[] = await sportsResponse.json();
@@ -109,7 +129,7 @@ async function getBasketballData(): Promise<void> {
         const athletesResponse = await fetch('https://keligmartin.github.io/api/athletes.json');
 
         if (!athletesResponse.ok) {
-            throw new Error('Impossible de récupérer les athlètes !');
+            notif('Impossible de récupérer les athlètes !');
         }
 
         const allAthletes: Athlete[] = await athletesResponse.json();
@@ -118,12 +138,12 @@ async function getBasketballData(): Promise<void> {
         const rencontresResponse = await fetch('https://keligmartin.github.io/api/rencontres.json');
 
         if (!rencontresResponse.ok) {
-            throw new Error('Impossible de récupérer les rencontres !');
+            notif('Impossible de récupérer les rencontres !');
         }
 
         const equipesResponse = await fetch('https://keligmartin.github.io/api/equipes.json');
         if (!equipesResponse.ok) {
-            throw new Error('Impossible de récupérer les équipes !');
+            notif('Impossible de récupérer les équipes !');
         }
 
         const allEquipes: Equipe[] = await equipesResponse.json();
@@ -225,8 +245,9 @@ function getBasketballHistorique(): Historique[] {
 
         return {
             date: rencontre.date,
-            description: `${rencontre.playoff_round} : ${rencontre.type.charAt(0).toUpperCase()}${rencontre.type.slice(1)} ${rencontre.game_number} (${rencontre.status})<br/><br/>
-            ${home} (${rencontre.home_score}) vs ${away} (${rencontre.away_score})`
+            description: `${translate(rencontre.playoff_round ?? "", matchs)} : ${rencontre.type.charAt(0).toUpperCase()}${rencontre.type.slice(1)} ${rencontre.game_number} (${translate(rencontre.status, statuts)})<br/><br/>
+            ${home} (${rencontre.home_score}) vs ${away} (${rencontre.away_score})<br/><br/>
+            ${rencontre.venue}`
         };
     });
 }
@@ -235,14 +256,14 @@ function getBasketballPlayers(athletes: Athlete[]): Player[] {
     return athletes.map((athlete) => ({
         name: `${athlete.first_name} ${athlete.last_name}`,
         subtitle: `${athlete.height_cm}cm ${athlete.weight_kg}kg`,
-        description: `${athlete.position} - #${athlete.jersey_number} - ${getEquipeName(athlete.team_id)}`,
+        description: `${translate(athlete.position, positions)} - #${athlete.jersey_number} - ${getEquipeName(athlete.team_id)}`,
         statLines: [`${athlete.stats.minutes_per_game} MIN<br/>${athlete.stats.points_per_game} PTS<br/>${athlete.stats.field_goal_percentage} %Tirs<br/>${athlete.stats.three_point_percentage} %3PT<br/>${athlete.stats.free_throw_percentage} %LF<br/>${athlete.stats.rebounds_per_game} REB`]
     }));
 }
 
 function positionFilter(): void {
-    const positions = athletes.map((athlete) => athlete.position);
-    optionsFiltre("position-filter", positions);
+    const allPositions = athletes.map((athlete) => athlete.position);
+    optionsFiltre("position-filter", allPositions, (value) => translate(value, positions));
 }
 
 function teamFilter(): void {
