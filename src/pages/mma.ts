@@ -1,4 +1,6 @@
+import { Sport } from "../types/sport.js";
 import { notif } from "../utils/notif.js";
+import { afficherInfos } from "../features/infos.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 import { afficherJoueurs as afficherCombattants, type Player } from "../features/tabs/players.tab.js";
@@ -31,23 +33,6 @@ const combats: Record<string, string> = {
 const statuts: Record<string, string> = {
     "finished": "terminé"
 };
-
-interface Sport {
-    id: number;
-    name: string;
-    slug: string;
-    type: string;
-    players_per_team: number;
-    match_duration_minutes: number;
-    governing_body: string;
-    competition: {
-        name: string;
-        host_country: string;
-        venue: string;
-        date: string;
-        format: string;
-    }
-}
 
 interface Athlete {
     id: number;
@@ -131,6 +116,7 @@ async function getMmaData(): Promise<void> {
         const allRencontres: Rencontre[] = await rencontresResponse.json();
         rencontres = allRencontres.filter((rencontre) => rencontre.sport_id === mma.id);
 
+        afficherInfos(mma);
         afficherStats(getMmaStats());
         afficherRencontres(getMmaHistorique());
         afficherCombattants(getMmaFighters(athletes));

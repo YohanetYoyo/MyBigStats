@@ -19,11 +19,8 @@
     </nav>
 </header>
 <main>
-    <section class="toolbar hidden">
-        <input id="search-input" type="text" placeholder="Rechercher un combattant..." aria-label="Recherche d'athlète">
-        <select id="weightclass-filter" aria-label="Filtrer par catégorie de poids">
-            <option value="">Toutes les catégories</option>
-        </select>
+    <section id="infos">
+        <h1>MMA</h1>
     </section>
 
     <nav class="tabs" role="tablist">
@@ -46,6 +43,13 @@
     <section id="tab-combattants" class="tab-panel hidden" data-tab-panel="combattants">
         <h2>Combattants</h2>
         <div id="athletes-list" class="athlete-grid">Chargement...</div>
+    </section>
+
+    <section class="toolbar hidden">
+        <input id="search-input" type="text" placeholder="Rechercher un combattant..." aria-label="Recherche d'athlète">
+        <select id="weightclass-filter" aria-label="Filtrer par catégorie de poids">
+            <option value="">Toutes les catégories</option>
+        </select>
     </section>
 
     <section id="tab-comparateur" class="tab-panel hidden" data-tab-panel="comparateur">
