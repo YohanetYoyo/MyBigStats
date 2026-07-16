@@ -306,8 +306,8 @@ function setupComparator(): void {
 
         if (!result) return;
 
-        const athlete1 = athletes.find((athlete) => athlete.id = id1);
-        const athlete2 = athletes.find((athlete) => athlete.id = id2);
+        const athlete1 = athletes.find((athlete) => athlete.id === id1);
+        const athlete2 = athletes.find((athlete) => athlete.id === id2);
 
         if (!athlete1 || !athlete2) {
             notif("Sélectionnez deux combattants valides.", "error");
@@ -320,7 +320,7 @@ function setupComparator(): void {
         }
 
         if (athlete1.sport_id !== athlete2.sport_id) {
-            notif("Vous ne pouvez pas comparer deux athlètes de différents sports", "error");
+            notif("Vous ne pouvez pas comparer deux athlètes de différents sports.", "error");
             return;
         }
 

@@ -352,21 +352,21 @@ function setupComparator(): void {
 
         if (!result) return;
 
-        const athlete1 = athletes.find((athlete) => athlete.id = id1);
-        const athlete2 = athletes.find((athlete) => athlete.id = id2);
+        const athlete1 = athletes.find((athlete) => athlete.id === id1);
+        const athlete2 = athletes.find((athlete) => athlete.id === id2);
 
         if (!athlete1 || !athlete2) {
-            notif("Select two valid fighters.", "error");
+            notif("Sélectionez deux joueurs valides.", "error");
             return;
         }
 
         if (id1 === id2) {
-            notif("Select two different fighters.", "error");
+            notif("Sélectionnez deux joueurs différents.", "error");
             return;
         }
 
         if (athlete1.sport_id !== athlete2.sport_id) {
-            notif("You cannot compare two athletes from different sports", "error");
+            notif("Vous ne pouvez pas comparer deux athlètes de différents sports.", "error");
             return;
         }
 
