@@ -3,6 +3,7 @@ import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
+import { remplirComparator, comparator } from "../features/comparator.js";
 
 interface Sport {
     id: number;
@@ -257,16 +258,11 @@ function teamFilter(): void {
 }
 
 function comparatorSelects(): void {
-    const select1 = document.getElementById("compare-athlete-1") as HTMLSelectElement | null;
-    const select2 = document.getElementById("compare-athlete-2") as HTMLSelectElement | null;
-    if (!select1 || !select2) return;
-
-    let optionsHtml = "";
-    for (const athlete of athletes) {
-        optionsHtml += `<option value="${athlete.id}">${athlete.first_name} ${athlete.last_name}</option>`;
-    }
-    select1.innerHTML = optionsHtml;
-    select2.innerHTML = optionsHtml;
+    const options = athletes.map((athlete) => ({
+        id: athlete.id,
+        name: `${athlete.first_name} ${athlete.last_name}`
+    }));
+    remplirComparator(options);
 }
 
 function setupTabs(): void {
@@ -290,7 +286,7 @@ function setupTabs(): void {
             });
 
             if (toolbar) {
-                if (toolbar.classList.contains("hidden")) {
+                if (targetTab === "joueurs") {
                     toolbar.classList.remove("hidden");
                 } else {
                     toolbar.classList.add("hidden");
@@ -330,46 +326,89 @@ function setupSearchAndFilter(): void {
 
 
 function setupComparator(): void {
-    const button = document.getElementById("compare-btn");
+    comparator((id1, id2) => {
+        const result = document.getElementById("compare-result");
 
-    button?.addEventListener("click", () => {
-        const select1: HTMLSelectElement = document.getElementById("compare-athlete-1") as HTMLSelectElement;
-        const select2: HTMLSelectElement = document.getElementById("compare-athlete-2") as HTMLSelectElement;
-        const resultBox = document.getElementById("compare-result");
-        if (!resultBox) return;
+        if (!result) return;
 
-        const id1 = Number(select1.value);
-        const id2 = Number(select2.value);
-
-        const athlete1 = athletes.find((athlete) => athlete.id === id1);
-        const athlete2 = athletes.find((athlete) => athlete.id === id2);
+        const athlete1 = athletes.find((athlete) => athlete.id = id1);
+        const athlete2 = athletes.find((athlete) => athlete.id = id2);
 
         if (!athlete1 || !athlete2) {
-            notif("Sélectionnez deux joueurs valides.", "error");
+            notif("Select two valid fighters.", "error");
             return;
         }
 
         if (id1 === id2) {
-            notif("Choisissez deux joueurs différents.", "error");
+            notif("Select two different fighters.", "error");
             return;
         }
 
         if (athlete1.sport_id !== athlete2.sport_id) {
-            notif("Impossible de comparer des athlètes de sports différents.", "error");
+            notif("You cannot compare two athletes from different sports", "error");
             return;
         }
 
-        resultBox.innerHTML = `
-      <table class="compare-table">
-        <thead>
-          <tr><th>${athlete1.first_name} ${athlete1.last_name}</th><th>Stat</th><th>${athlete2.first_name} ${athlete2.last_name}</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>${athlete1.stats.points_per_game}</td><td>Points par match</td><td>${athlete2.stats.points_per_game}</td></tr>
-          <tr><td>${athlete1.stats.rebounds_per_game}</td><td>Rebonds par match</td><td>${athlete2.stats.rebounds_per_game}</td></tr>
-          <tr><td>${athlete1.stats.assists_per_game}</td><td>Passes par match</td><td>${athlete2.stats.assists_per_game}</td></tr>
-          <tr><td>${(athlete1.stats.field_goal_percentage * 100).toFixed(1)}%</td><td>Réussite tirs</td><td>${(athlete2.stats.field_goal_percentage * 100).toFixed(1)}%</td></tr>
-
+        result.innerHTML = `
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>${athlete1.first_name} ${athlete1.last_name}</th>
+                    <th>Stat</th>
+                    <th>${athlete2.first_name} ${athlete2.last_name}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>${athlete1.stats.games_played}</td>
+                    <td>Matchs joués</td>
+                    <td>${athlete2.stats.games_played}</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.points_per_game}</td>
+                    <td>Points par match</td>
+                    <td>${athlete2.stats.points_per_game}</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.rebounds_per_game}</td>
+                    <td>Rebonds par match</td>
+                    <td>${athlete2.stats.rebounds_per_game}</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.assists_per_game}</td>
+                    <td>Passes par match</td>
+                    <td>${athlete2.stats.assists_per_game}</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.steals_per_game}</td>
+                    <td>Interceptions par match</td>
+                    <td>${athlete2.stats.steals_per_game}</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.blocks_per_game}</td>
+                    <td>Contres par match</td>
+                    <td>${athlete2.stats.blocks_per_game}</td>
+                </tr>
+                <tr>
+                    <td>${(athlete1.stats.field_goal_percentage * 100).toFixed(1)}%</td>
+                    <td>Pourcentage de paniers</td>
+                    <td>${(athlete2.stats.field_goal_percentage * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                    <td>${(athlete1.stats.three_point_percentage * 100).toFixed(1)}%</td>
+                    <td>Pourcentage de paniers à trois points</td>
+                    <td>${(athlete2.stats.three_point_percentage * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                    <td>${(athlete1.stats.free_throw_percentage * 100).toFixed(1)}%</td>
+                    <td>Pourcentage des lancers-francs</td>
+                    <td>${(athlete2.stats.free_throw_percentage * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                    <td>${athlete1.stats.minutes_per_game}</td>
+                    <td>Minutes par match</td>
+                    <td>${athlete2.stats.minutes_per_game}</td>
+                </tr>
         </tbody>
       </table>
     `;

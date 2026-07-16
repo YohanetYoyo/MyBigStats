@@ -3,6 +3,7 @@ import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
 import { afficherJoueurs as afficherCombattants, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
+import { remplirComparator, comparator } from "../features/comparator.js";
 
 interface Sport {
     id: number;
@@ -209,16 +210,11 @@ function weightClassFilter(): void {
 }
 
 function comparatorSelects(): void {
-    const select1 = document.getElementById("compare-athlete-1") as HTMLSelectElement | null;
-    const select2 = document.getElementById("compare-athlete-2") as HTMLSelectElement | null;
-    if (!select1 || !select2) return;
-
-    let optionsHtml = "";
-    for (const athlete of athletes) {
-        optionsHtml += `<option value="${athlete.id}">${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}</option>`;
-    }
-    select1.innerHTML = optionsHtml;
-    select2.innerHTML = optionsHtml;
+    const options = athletes.map((athlete) => ({
+        id: athlete.id,
+        name: `${athlete.first_name} ${athlete.nickname ? `"${athlete.nickname}"` : ""} ${athlete.last_name}`
+    }));
+    remplirComparator(options);
 }
 
 function setupTabs(): void {
@@ -242,7 +238,7 @@ function setupTabs(): void {
             });
 
             if (toolbar) {
-                if (toolbar.classList.contains("hidden")) {
+                if (targetTab === "combattants") {
                     toolbar.classList.remove("hidden");
                 } else {
                     toolbar.classList.add("hidden");
@@ -278,46 +274,77 @@ function setupSearchAndFilter(): void {
 
 
 function setupComparator(): void {
-    const button = document.getElementById("compare-btn");
+    comparator((id1, id2) => {
+        const result = document.getElementById("compare-result");
 
-    button?.addEventListener("click", () => {
-        const select1: HTMLSelectElement = document.getElementById("compare-athlete-1") as HTMLSelectElement;
-        const select2: HTMLSelectElement = document.getElementById("compare-athlete-2") as HTMLSelectElement;
-        const resultBox = document.getElementById("compare-result");
-        if (!resultBox) return;
+        if (!result) return;
 
-        const id1 = Number(select1.value);
-        const id2 = Number(select2.value);
-
-        const athlete1 = athletes.find((athlete) => athlete.id === id1);
-        const athlete2 = athletes.find((athlete) => athlete.id === id2);
+        const athlete1 = athletes.find((athlete) => athlete.id = id1);
+        const athlete2 = athletes.find((athlete) => athlete.id = id2);
 
         if (!athlete1 || !athlete2) {
-            notif("Sélectionne deux combattants valides.", "error");
+            notif("Sélectionnez deux combattants valides.", "error");
             return;
         }
 
         if (id1 === id2) {
-            notif("Choisis deux combattants différents.", "error");
+            notif("Sélectionnez deux comnbattants différents.", "error");
             return;
         }
 
         if (athlete1.sport_id !== athlete2.sport_id) {
-            notif("Impossible de comparer des athlètes de sports différents.", "error");
+            notif("Vous ne pouvez pas comparer deux athlètes de différents sports", "error");
             return;
         }
 
-        resultBox.innerHTML = `
-      <table class="compare-table">
-        <thead>
-          <tr><th>${athlete1.first_name} ${athlete1.nickname ? `"${athlete1.nickname}"` : ""} ${athlete1.last_name}</th><th>Stat</th><th>${athlete2.first_name + (athlete2.nickname ? ` "${athlete2.nickname}" ` : " ") + athlete2.last_name}</th></tr>
-        </thead>
+        result.innerHTML = `
+        <table class="compare-table">
+            <thead>
+                <tr>
+                    <th>${athlete1.first_name} ${athlete1.nickname ? `"${athlete1.nickname}"` : ""} ${athlete1.last_name}</th>
+                    <th>Stat</th>
+                    <th>${athlete2.first_name + (athlete2.nickname ? ` "${athlete2.nickname}" ` : " ") + athlete2.last_name}</th>
+                </tr>
+            </thead>
         <tbody>
-          <tr><td>${athlete1.stats.wins ?? 0}</td><td>Victoires</td><td>${athlete2.stats.wins ?? 0}</td></tr>
-          <tr><td>${athlete1.stats.losses ?? 0}</td><td>Défaites</td><td>${athlete2.stats.losses ?? 0}</td></tr>
+            <tr>
+                <td>${athlete1.stats.wins ?? 0}</td>
+                <td>Victoires</td>
+                <td>${athlete2.stats.wins ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.wins_by_ko ?? 0}</td>
+                <td>Victoires par K.O.</td>
+                <td>${athlete2.stats.wins_by_ko ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.wins_by_submission ?? 0}</td>
+                <td>Victoires par soumission</td>
+                <td>${athlete2.stats.wins_by_submission ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.wins_by_decision ?? 0}</td>
+                <td>Victoires par décision</td>
+                <td>${athlete2.stats.wins_by_decision ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.losses ?? 0}</td>
+                <td>Défaites</td>
+                <td>${athlete2.stats.losses ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.draws ?? 0}</td>
+                <td>Egalités</td>
+                <td>${athlete2.stats.draws ?? 0}</td>
+            </tr>
+            <tr>
+                <td>${athlete1.stats.no_contests ?? 0}</td>
+                <td>Sans décision</td>
+                <td>${athlete2.stats.no_contests ?? 0}</td>
+            </tr>
         </tbody>
-      </table>
-    `;
+        </table>
+        `;
     });
 }
 
