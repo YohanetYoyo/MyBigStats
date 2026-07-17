@@ -301,7 +301,7 @@ function setupComparator(): void {
         }
 
         if (id1 === id2) {
-            notif("Sélectionnez deux comnbattants différents.", "error");
+            notif("Sélectionnez deux combattants différents.", "error");
             return;
         }
 

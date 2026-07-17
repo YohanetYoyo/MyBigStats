@@ -76,6 +76,8 @@ main {
     color: var(--color-text);
 }
 
+.hidden { display: none; }
+
 .tabs {
     display: flex;
     gap: 0.5rem;

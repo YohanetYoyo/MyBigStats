@@ -53,7 +53,7 @@ interface Rencontre {
     scorers?: Scorer[];
 }
 
-type AthleteFilter = Partial<Pick<Athlete, "position">>;
+type AthleteFilter = Partial<Pick<Athlete, "position" | "team_id">>;
 
 let athletes: Athlete[] = [];
 let equipes: Equipe[] = [];
@@ -106,6 +106,7 @@ async function getFootballData(): Promise<void> {
         afficherRencontres(getFootballHistorique());
         afficherJoueurs(getFootballPlayers(athletes));
         positionFilter();
+        teamFilter();
         comparatorSelects();
     } catch (error) {
         console.error(error);
@@ -204,6 +205,18 @@ function positionFilter(): void {
     optionsFiltre("position-filter", allPositions);
 }
 
+function teamFilter(): void {
+    const select = document.getElementById("team-filter");
+    if (!select) return;
+
+    for (const equipe of equipes) {
+        const option = document.createElement("option");
+        option.value = String(equipe.id);
+        option.textContent = equipe.name;
+        select.appendChild(option);
+    }
+}
+
 function comparatorSelects(): void {
     const options = athletes.map((athlete) => ({
         id: athlete.id,
@@ -246,17 +259,20 @@ function setupTabs(): void {
 function applyFilters(): void {
     const searchInput = document.getElementById("search-input") as HTMLInputElement | null;
     const positionFilterSelect = document.getElementById("position-filter") as HTMLSelectElement | null;
+    const teamFilter = document.getElementById("team-filter") as HTMLSelectElement | null;
 
     const texte = searchInput?.value ?? "";
 
     const filter: AthleteFilter = {
         position: positionFilterSelect?.value || undefined,
+        team_id: teamFilter?.value ? Number(teamFilter.value) : undefined
     };
 
     const filtered = athletes.filter((athlete) => {
         const matchesName = correspond(texte, athlete.first_name, athlete.last_name);
         const matchesPosition = !filter.position || athlete.position === filter.position;
-        return matchesName && matchesPosition;
+        const matchesTeam = !filter.team_id || athlete.team_id === filter.team_id;
+        return matchesName && matchesPosition && matchesTeam;
     });
 
     afficherJoueurs(getFootballPlayers(filtered));
@@ -265,6 +281,7 @@ function applyFilters(): void {
 function setupSearchAndFilter(): void {
     document.getElementById("search-input")?.addEventListener("input", applyFilters);
     document.getElementById("position-filter")?.addEventListener("change", applyFilters);
+    document.getElementById("team-filter")?.addEventListener("change", applyFilters);
 }
 
 function setupComparator(): void {
