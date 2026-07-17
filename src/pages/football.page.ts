@@ -3,6 +3,7 @@ import { notif } from "../utils/notif.js";
 import { afficherInfos } from "../features/infos.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
+import { afficherEquipes, type Team } from "../features/tabs/equipes.tab.js";
 import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
 import { remplirComparator, comparator } from "../features/comparator.js";
@@ -33,6 +34,14 @@ interface Equipe {
     id: number;
     sport_id: number;
     name: string;
+    short_name: string;
+    country: string;
+    confederation: string;
+    fifa_ranking: number;
+    world_cup_titles: number;
+    world_cup_appearances: number;
+    coach: string;
+    group: string;
 }
 
 interface Scorer {
@@ -104,6 +113,7 @@ async function getFootballData(): Promise<void> {
         afficherInfos(football);
         afficherStats(getFootballStats());
         afficherRencontres(getFootballHistorique());
+        afficherEquipes(getFootballEquipes(equipes));
         afficherJoueurs(getFootballPlayers(athletes));
         positionFilter();
         teamFilter();
@@ -189,6 +199,20 @@ function getFootballHistorique(): Historique[] {
             ${scorers ? `<br/>Buteurs : ${scorers}` : ""}`
         }
     });
+}
+
+function getFootballEquipes(equipes: Equipe[]): Team[] {
+    return equipes.map((equipe) => ({
+        name: `${equipe.name}`,
+        subtitle: `${equipe.short_name} - ${equipe.country}`,
+        description: `Groupe ${equipe.group}<br/>
+        Entraîneur : ${equipe.coach}<br/><br/>
+        Confédération : ${equipe.confederation}<br/>
+        Classement FIFA : ${equipe.fifa_ranking}<br/>
+        Titres CDM : ${equipe.world_cup_titles}<br/>
+        Participations CDM : ${equipe.world_cup_appearances}<br/>
+        `
+    }))
 }
 
 function getFootballPlayers(athletes: Athlete[]): Player[] {

@@ -3,10 +3,16 @@ import { notif } from "../utils/notif.js";
 import { afficherInfos } from "../features/infos.js";
 import { afficherStats, type Category } from "../features/tabs/stats.tab.js";
 import { afficherRencontres, type Historique } from "../features/tabs/history.tab.js";
+import { afficherEquipes, type Team } from "../features/tabs/equipes.tab.js";
 import { afficherJoueurs, type Player } from "../features/tabs/players.tab.js";
 import { optionsFiltre, correspond } from "../features/search.js";
 import { remplirComparator, comparator } from "../features/comparator.js";
 import { translate } from "../utils/translate.js";
+
+const infos: Record<string, string> = {
+    "Western": "Ouest",
+    "Eastern": "Est"
+}
 
 const positions: Record<string, string> = {
     "Point Guard": "Meneur de jeu",
@@ -140,6 +146,7 @@ async function getBasketballData(): Promise<void> {
         afficherInfos(basketball);
         afficherStats(getBasketballStats());
         afficherRencontres(getBasketballHistorique());
+        afficherEquipes(getBasketBallEquipes(equipes));
         afficherJoueurs(getBasketballPlayers(athletes));
         positionFilter();
         teamFilter();
@@ -241,6 +248,21 @@ function getBasketballHistorique(): Historique[] {
             ${rencontre.venue} (${new Intl.NumberFormat('fr-FR').format(rencontre.attendance)} spectateurs)`
         };
     });
+}
+
+function getBasketBallEquipes(equipes: Equipe[]): Team[] {
+    return equipes.map((equipe) => ({
+        name: `${equipe.name}`,
+        subtitle: `${equipe.short_name} - ${equipe.city}`,
+        description: `Seed: ${equipe.seed}<br/>
+        Entraîneur: ${equipe.coach}<br/>
+        Salle : ${equipe.arena}<br/><br/>
+        Conférence : ${translate(equipe.conference, infos)}<br/>
+        Titres : ${equipe.championships}<br/>
+        Victoires en saison régulière : ${equipe.regular_season_wins}<br/>
+        Défaites en saison régulière : ${equipe.regular_season_losses}
+        `
+    }))
 }
 
 function getBasketballPlayers(athletes: Athlete[]): Player[] {

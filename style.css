@@ -135,23 +135,23 @@ main {
     padding: 0.75rem 1rem;
 }
 
-.athlete-grid {
+.athlete-grid, .team-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1rem;
 }
 
-.athlete-card {
+.athlete-card, .team-card {
     background: var(--color-surface);
     border-radius: var(--radius);
     padding: 1rem;
 }
 
-.athlete-card h3 {
+.athlete-card h3, .team-card h3 {
     margin: 0 0 0.5rem;
 }
 
-.athlete-card small {
+.athlete-card small, .team-card small {
     display: block;
     color: var(--color-text-muted);
     font-weight: 400;
