@@ -1,9 +1,17 @@
-import { Router } from "./router.ts";
-import { renderHomePage } from "./pages/home.page.ts";
-import { renderFootballPage } from "./pages/football.page.ts";
-import { renderMmaPage } from "./pages/mma.page.ts";
-import { renderBasketPage } from "./pages/basket.page.ts";
-import { getAppRoot } from "./utils/dom.ts";
+import { Router } from "./router.js";
+import { renderHomePage } from "./pages/home.page.js";
+import { renderFootballPage } from "./pages/football.page.js";
+import { getAppRoot } from "./utils/dom.js";
+
+function renderBasketPage(): Promise<void> {
+    getAppRoot().innerHTML = `<p>Page Basketball en cours de développement.</p>`;
+    return Promise.resolve();
+}
+
+function renderMmaPage(): Promise<void> {
+    getAppRoot().innerHTML = `<p>Page MMA en cours de développement.</p>`;
+    return Promise.resolve();
+}
 
 function updateActiveNavLink(hash: string): void {
     document.querySelectorAll<HTMLAnchorElement>(".sport-nav a").forEach((link) => {
