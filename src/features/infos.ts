@@ -15,8 +15,8 @@ export function afficherInfos(sport: Sport): void {
 
     if (sport.competition.start_date && sport.competition.end_date) {
         dates = `
-        Du ${new Intl.DateTimeFormat("fr-FR").format(new Date(sport.competition.start_date))} au ${new Intl.DateTimeFormat("fr-FR").format(new Date(sport.competition.end_date))}`;`
-        }`;
+        Du ${new Intl.DateTimeFormat("fr-FR").format(new Date(sport.competition.start_date))} au ${new Intl.DateTimeFormat("fr-FR").format(new Date(sport.competition.end_date))}
+        `;
     } else if (sport.competition.date) {
         dates = `
         Date : ${new Intl.DateTimeFormat("fr-FR").format(new Date(sport.competition.date))}
@@ -31,7 +31,7 @@ export function afficherInfos(sport: Sport): void {
         Durée : ${sport.match_duration_minutes}<br/>
         Organisme : ${sport.governing_body}<br/>
     </p>
-    
+
     <h3>${sport.competition.name}</h3>
     <p>
         Pays : ${sport.competition.host_country}<br/>

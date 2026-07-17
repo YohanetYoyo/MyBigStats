@@ -1,25 +1,61 @@
+
+/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Index · HTML
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8" />
     <title>MyBigStats</title>
-    <script type="module" src="dist/main.js"></script>
+    <script type="module" src="dist/pages/home.page.js"></script>
     <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
+ 
 <div id="notifications" class="notifications"></div>
-
+ 
 <header class="site-header">
     <h1>MyBigStats</h1>
     <nav class="sport-nav">
-        <a href="#/">Accueil</a>
-        <a href="#/sport/football">Football</a>
-        <a href="#/sport/basketball">Basket</a>
-        <a href="#/sport/mma">MMA</a>
+        <a href="index.html">Accueil</a>
+        <a href="football.html">Football</a>
+        <a href="basketball.html">Basket</a>
+        <a href="mma.html">MMA</a>
     </nav>
 </header>
-
-<main id="app">Chargement...</main>
+ 
+<main id="app">
+    <section id="tab-ongoing">
+        <h2>Événements en cours</h2>
+        <div id="ongoing-events" class="event-grid">Chargement...</div>
+    </section>
+ 
+    <section id="tab-all-sports">
+        <h2>Nos sports</h2>
+        <div id="all-sports" class="sport-grid">Chargement...</div>
+    </section>
+</main>
 </body>
 </html>
