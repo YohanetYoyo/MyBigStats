@@ -1,7 +1,69 @@
-import type { Competition, Equipe, Rencontre, Sport, CompetitionStatus } from "../types/index.js";
-import { apiService } from "../services/api.service.js";
-import { notifyError } from "../features/notifications.js";
-import { getAppRoot } from "../utils/dom.js";
+import { notif } from "../utils/notif.js";
+
+interface Competition {
+    name: string;
+    host_country?: string;
+    start_date?: string;
+    end_date?: string;
+    date?: string;
+}
+
+interface Sport {
+    id: number;
+    name: string;
+    slug: string;
+    competition: Competition;
+}
+
+interface Equipe {
+    id: number;
+    sport_id: number;
+    name: string;
+}
+
+interface Rencontre {
+    id: number;
+    sport_id: number;
+    date: string;
+    home_team_id?: number;
+    away_team_id?: number;
+    home_score?: number;
+    away_score?: number;
+}
+
+type CompetitionStatus = "upcoming" | "ongoing" | "finished";
+
+let sports: Sport[] = [];
+let equipes: Equipe[] = [];
+let rencontres: Rencontre[] = [];
+
+async function getHomeData(): Promise<void> {
+    try {
+        const sportsResponse = await fetch('https://keligmartin.github.io/api/sports.json');
+        if (!sportsResponse.ok) {
+            notif('Impossible de récupérer les sports. Réessayez plus tard.');
+        }
+        sports = await sportsResponse.json();
+
+        const equipesResponse = await fetch('https://keligmartin.github.io/api/equipes.json');
+        if (!equipesResponse.ok) {
+            notif('Impossible de récupérer les équipes !');
+        }
+        equipes = await equipesResponse.json();
+
+        const rencontresResponse = await fetch('https://keligmartin.github.io/api/rencontres.json');
+        if (!rencontresResponse.ok) {
+            notif('Impossible de récupérer les rencontres !');
+        }
+        rencontres = await rencontresResponse.json();
+
+        afficherOngoing();
+        afficherAllSports();
+    } catch (error) {
+        console.error(error);
+        notif("L'API est indisponible pour le moment. Réessayez plus tard.", "error");
+    }
+}
 
 function getCompetitionStatus(competition: Competition): CompetitionStatus {
     const today = new Date();
@@ -29,37 +91,37 @@ function formatDateRange(competition: Competition): string {
     return "";
 }
 
-function equipeName(equipes: Equipe[], teamId: number | undefined): string | null {
+function equipeName(teamId: number | undefined): string | null {
     if (teamId === undefined) return null;
     return equipes.find((e) => e.id === teamId)?.name ?? null;
 }
 
-function getLatestRencontre(rencontres: Rencontre[], sportId: number): Rencontre | undefined {
+function getLatestRencontre(sportId: number): Rencontre | undefined {
     return [...rencontres]
         .filter((r) => r.sport_id === sportId)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 }
 
-function describeLatest(rencontre: Rencontre, equipes: Equipe[]): string {
+function describeLatest(rencontre: Rencontre): string {
     const date = new Date(rencontre.date).toLocaleDateString("fr-FR");
     if (rencontre.home_team_id !== undefined && rencontre.away_team_id !== undefined) {
-        const home = equipeName(equipes, rencontre.home_team_id) ?? "Équipe inconnue";
-        const away = equipeName(equipes, rencontre.away_team_id) ?? "Équipe inconnue";
+        const home = equipeName(rencontre.home_team_id) ?? "Équipe inconnue";
+        const away = equipeName(rencontre.away_team_id) ?? "Équipe inconnue";
         return `${date} — ${home} ${rencontre.home_score ?? "?"} - ${rencontre.away_score ?? "?"} ${away}`;
     }
     return `${date} — Dernière rencontre disponible`;
 }
 
-function ongoingCard(sport: Sport, rencontres: Rencontre[], equipes: Equipe[]): string {
-    const latest = getLatestRencontre(rencontres, sport.id);
+function ongoingCard(sport: Sport): string {
+    const latest = getLatestRencontre(sport.id);
     return `
         <article class="event-card event-card--ongoing">
             <span class="badge badge--ongoing">En cours</span>
             <h3>${sport.competition.name}</h3>
             <p class="event-sport">${sport.name}${sport.competition.host_country ? ` — ${sport.competition.host_country}` : ""}</p>
             <p>${formatDateRange(sport.competition)}</p>
-            ${latest ? `<p class="event-latest">Dernier résultat : ${describeLatest(latest, equipes)}</p>` : ""}
-            <a class="btn" href="#/sport/${sport.slug}">Voir la page ${sport.name}</a>
+            ${latest ? `<p class="event-latest">Dernier résultat : ${describeLatest(latest)}</p>` : ""}
+            <a class="btn" href="${sport.slug}.html">Voir la page ${sport.name}</a>
         </article>
     `;
 }
@@ -72,51 +134,27 @@ function sportCard(sport: Sport): string {
             <h3>${sport.name}</h3>
             <p>${sport.competition.name}</p>
             <p class="event-dates">${formatDateRange(sport.competition)}</p>
-            <a class="btn btn--secondary" href="#/sport/${sport.slug}">Consulter</a>
+            <a class="btn btn--secondary" href="${sport.slug}.html">Consulter</a>
         </article>
     `;
 }
 
-function template(): string {
-    return `
-        <section id="tab-ongoing">
-            <h2>Événements en cours</h2>
-            <div id="ongoing-events" class="event-grid">Chargement...</div>
-        </section>
+function afficherOngoing(): void {
+    const container = document.getElementById("ongoing-events");
+    if (!container) return;
 
-        <section id="tab-all-sports">
-            <h2>Nos sports</h2>
-            <div id="all-sports" class="sport-grid">Chargement...</div>
-        </section>
-    `;
+    const ongoing = sports.filter((sport) => getCompetitionStatus(sport.competition) === "ongoing");
+
+    container.innerHTML = ongoing.length
+        ? ongoing.map((sport) => ongoingCard(sport)).join("")
+        : "<p>Aucun événement en cours actuellement.</p>";
 }
 
-export async function renderHomePage(): Promise<void> {
-    const root = getAppRoot();
-    root.innerHTML = template();
+function afficherAllSports(): void {
+    const container = document.getElementById("all-sports");
+    if (!container) return;
 
-    try {
-        const [sports, rencontres, equipes] = await Promise.all([
-            apiService.getSports(),
-            apiService.getRencontres(),
-            apiService.getEquipes(),
-        ]);
-
-        const ongoingContainer = document.getElementById("ongoing-events");
-        const allSportsContainer = document.getElementById("all-sports");
-
-        const ongoing = sports.filter((sport) => getCompetitionStatus(sport.competition) === "ongoing");
-
-        if (ongoingContainer) {
-            ongoingContainer.innerHTML = ongoing.length
-                ? ongoing.map((sport) => ongoingCard(sport, rencontres, equipes)).join("")
-                : "<p>Aucun événement en cours actuellement.</p>";
-        }
-
-        if (allSportsContainer) {
-            allSportsContainer.innerHTML = sports.map(sportCard).join("");
-        }
-    } catch (error) {
-        notifyError(error, "L'API est indisponible pour le moment. Réessayez plus tard.");
-    }
+    container.innerHTML = sports.map(sportCard).join("");
 }
+
+getHomeData();
